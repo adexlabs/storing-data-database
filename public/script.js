@@ -1,23 +1,41 @@
 let currentConversation = null;
 
 const messages =
-document.getElementById("messages");
+    document.getElementById("messages");
 
 const conversationList =
-document.getElementById("conversationList");
+    document.getElementById("conversationList");
+
+const input =
+    document.getElementById("messageInput");
+
+input.addEventListener(
+    "keypress",
+    function (e) {
+
+        if (e.key === "Enter") {
+
+            e.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
 
 async function createConversation() {
 
     const res =
-    await fetch("/api/conversation", {
-        method:"POST"
-    });
+        await fetch("/api/conversation", {
+            method: "POST"
+        });
 
     const data =
-    await res.json();
+        await res.json();
 
     currentConversation =
-    data.id;
+        data.id;
 
     loadConversations();
 
@@ -25,33 +43,33 @@ async function createConversation() {
 }
 
 document
-.getElementById("newChat")
-.onclick = createConversation;
+    .getElementById("newChat")
+    .onclick = createConversation;
 
-async function loadConversations(){
+async function loadConversations() {
 
     const res =
-    await fetch("/api/conversations");
+        await fetch("/api/conversations");
 
     const chats =
-    await res.json();
+        await res.json();
 
-    conversationList.innerHTML="";
+    conversationList.innerHTML = "";
 
-    chats.forEach(chat=>{
+    chats.forEach(chat => {
 
         const div =
-        document.createElement("div");
+            document.createElement("div");
 
-        div.className="chat-item";
+        div.className = "chat-item";
 
-        div.innerText=
-        chat.title;
+        div.innerText =
+            chat.title;
 
-        div.onclick=()=>{
+        div.onclick = () => {
 
-            currentConversation=
-            chat.id;
+            currentConversation =
+                chat.id;
 
             loadMessages(chat.id);
         };
@@ -61,17 +79,17 @@ async function loadConversations(){
     });
 }
 
-async function loadMessages(id){
+async function loadMessages(id) {
 
     const res =
-    await fetch(`/api/messages?id=${id}`);
+        await fetch(`/api/messages?id=${id}`);
 
     const data =
-    await res.json();
+        await res.json();
 
-    messages.innerHTML="";
+    messages.innerHTML = "";
 
-    data.forEach(msg=>{
+    data.forEach(msg => {
 
         addMessage(
             msg.content,
@@ -82,62 +100,62 @@ async function loadMessages(id){
 
 }
 
-function addMessage(text, role){
+function addMessage(text, role) {
 
     const div =
-    document.createElement("div");
+        document.createElement("div");
 
     div.className =
-    `message ${role}`;
+        `message ${role}`;
 
     div.innerText = text;
 
     messages.appendChild(div);
 
     messages.scrollTop =
-    messages.scrollHeight;
+        messages.scrollHeight;
 }
 
 document
-.getElementById("sendBtn")
-.onclick = sendMessage;
+    .getElementById("sendBtn")
+    .onclick = sendMessage;
 
-async function sendMessage(){
+async function sendMessage() {
 
     const input =
-    document.getElementById("messageInput");
+        document.getElementById("messageInput");
 
     const text =
-    input.value.trim();
+        input.value.trim();
 
-    if(!text) return;
+    if (!text) return;
 
-    addMessage(text,"user");
+    addMessage(text, "user");
 
-    input.value="";
+    input.value = "";
 
     const res =
-    await fetch("/api/chat",{
+        await fetch("/api/chat", {
 
-        method:"POST",
+            method: "POST",
 
-        headers:{
-            "Content-Type":
-            "application/json"
-        },
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
 
-        body:JSON.stringify({
+            body: JSON.stringify({
 
-            conversationId:
-            currentConversation,
+                conversationId:
+                    currentConversation,
 
-            message:text
+                message: text
 
-        })
-    });
+            })
+        });
 
     const data =
-    await res.json();
+        await res.json();
 
     addMessage(
         data.reply,

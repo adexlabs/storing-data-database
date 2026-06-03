@@ -1,78 +1,45 @@
 const axios = require("axios");
-const { createClient } = require("@supabase/supabase-js");
-
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 module.exports = async (req, res) => {
-    try {
-        if (req.method !== "POST") {
-            return res.status(405).json({
-                error: "Method not allowed"
-            });
+
+  try {
+
+    const { message } = req.body;
+
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
         }
+      }
+    );
 
-        const { message, sessionId } = req.body;
+    const reply =
+      response.data.choices[0].message.content;
 
-        if (!message) {
-            return res.status(400).json({
-                error: "Message required"
-            });
-        }
+    res.json({
+      reply
+    });
 
-        await supabase
-            .from("chat_messages")
-            .insert([
-                {
-                    session_id: sessionId,
-                    role: "user",
-                    message
-                }
-            ]);
+  } catch (error) {
 
-        const response = await axios.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            {
-                model: "openai/gpt-4o-mini",
-                messages: [
-                    {
-                        role: "user",
-                        content: message
-                    }
-                ]
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+    console.log(error.response?.data);
 
-        const aiReply =
-            response.data.choices[0].message.content;
+    res.status(500).json({
+      error: error.response?.data || error.message
+    });
 
-        await supabase
-            .from("chat_messages")
-            .insert([
-                {
-                    session_id: sessionId,
-                    role: "assistant",
-                    message: aiReply
-                }
-            ]);
+  }
 
-        res.status(200).json({
-            reply: aiReply
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: error.message
-        });
-    }
 };
