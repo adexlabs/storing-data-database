@@ -6,27 +6,28 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+  try {
 
-  const { id } = req.query;
+    const { id } = req.query;
 
-  const { data, error } =
-    await supabase
-      .from("messages")
-      .select("*")
-      .eq(
-        "conversation_id",
-        id
-      )
-      .order(
-        "created_at",
-        {
+    const { data, error } =
+      await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", id)
+        .order("created_at", {
           ascending: true
-        }
-      );
+        });
 
-  if (error) {
-    return res.status(500).json(error);
+    if (error) throw error;
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+
+    return res.status(500).json({
+      error: error.message
+    });
+
   }
-
-  return res.json(data);
 }

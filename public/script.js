@@ -122,9 +122,6 @@ document
 
 async function sendMessage() {
 
-    const input =
-        document.getElementById("messageInput");
-
     const text =
         input.value.trim();
 
@@ -134,59 +131,125 @@ async function sendMessage() {
 
     input.value = "";
 
-    const res =
-        await fetch("/api/chat", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-
-            body: JSON.stringify({
-
-                conversationId:
-                    currentConversation,
-
-                message: text
-
-            })
-        });
-
-    const loadingDiv =
+    const loader =
         document.createElement("div");
 
-    loadingDiv.className =
-        "message assistant";
+    loader.className =
+        "message assistant loader";
 
-    loadingDiv.innerHTML =
-        "AI is typing<span class='dots'>...</span>";
+    loader.innerHTML =
+        "<span></span><span></span><span></span>";
 
-    messages.appendChild(loadingDiv);
-
-    // const data = await res.json();
-
-    let data;
+    messages.appendChild(loader);
 
     try {
-        data = await res.json();
-    } catch (e) {
-        const text = await res.text();
-        console.error("Server response:", text);
-        addMessage("Server Error", "assistant");
-        return;
+
+        const res =
+            await fetch("/api/chat", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    conversationId:
+                        currentConversation,
+
+                    message: text
+                })
+            });
+
+        const data =
+            await res.json();
+
+        loader.remove();
+
+        addMessage(
+            data.reply || data.error,
+            "assistant"
+        );
+
+    } catch (err) {
+
+        loader.remove();
+
+        addMessage(
+            "Server Error",
+            "assistant"
+        );
     }
-
-    loadingDiv.remove();
-
-    addMessage(
-        data.reply,
-        "assistant"
-    );
-
-    loadConversations();
 }
+
+// async function sendMessage() {
+
+//     const input =
+//         document.getElementById("messageInput");
+
+//     const text =
+//         input.value.trim();
+
+//     if (!text) return;
+
+//     addMessage(text, "user");
+
+//     input.value = "";
+
+//     const res =
+//         await fetch("/api/chat", {
+
+//             method: "POST",
+
+//             headers: {
+//                 "Content-Type":
+//                     "application/json"
+//             },
+
+//             body: JSON.stringify({
+
+//                 conversationId:
+//                     currentConversation,
+
+//                 message: text
+
+//             })
+//         });
+
+//     const loadingDiv =
+//         document.createElement("div");
+
+//     loadingDiv.className =
+//         "message assistant";
+
+//     loadingDiv.innerHTML =
+//         "AI is typing<span class='dots'>...</span>";
+
+//     messages.appendChild(loadingDiv);
+
+//     // const data = await res.json();
+
+//     let data;
+
+//     try {
+//         data = await res.json();
+//     } catch (e) {
+//         const text = await res.text();
+//         console.error("Server response:", text);
+//         addMessage("Server Error", "assistant");
+//         return;
+//     }
+
+//     loadingDiv.remove();
+
+//     addMessage(
+//         data.reply,
+//         "assistant"
+//     );
+
+//     loadConversations();
+// }
 
 loadConversations();
 createConversation();
