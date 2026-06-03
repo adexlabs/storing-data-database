@@ -165,8 +165,18 @@ async function sendMessage() {
 
     messages.appendChild(loadingDiv);
 
-    const data =
-        await res.json();
+    // const data = await res.json();
+
+    let data;
+
+    try {
+        data = await res.json();
+    } catch (e) {
+        const text = await res.text();
+        console.error("Server response:", text);
+        addMessage("Server Error", "assistant");
+        return;
+    }
 
     loadingDiv.remove();
 
