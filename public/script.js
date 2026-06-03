@@ -154,8 +154,21 @@ async function sendMessage() {
             })
         });
 
+    const loadingDiv =
+        document.createElement("div");
+
+    loadingDiv.className =
+        "message assistant";
+
+    loadingDiv.innerHTML =
+        "AI is typing<span class='dots'>...</span>";
+
+    messages.appendChild(loadingDiv);
+
     const data =
         await res.json();
+
+    loadingDiv.remove();
 
     addMessage(
         data.reply,

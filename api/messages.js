@@ -1,30 +1,32 @@
-const { createClient }
-    = require("@supabase/supabase-js");
+import { createClient } from "@supabase/supabase-js";
 
-const supabase =
-    createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-module.exports =
-    async (req, res) => {
+export default async function handler(req, res) {
 
-        const { id } =
-            req.query;
+  const { id } = req.query;
 
-        const { data } =
-            await supabase
-                .from("messages")
-                .select("*")
-                .eq(
-                    "conversation_id",
-                    id
-                )
-                .order(
-                    "created_at"
-                );
+  const { data, error } =
+    await supabase
+      .from("messages")
+      .select("*")
+      .eq(
+        "conversation_id",
+        id
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
 
-        res.json(data);
+  if (error) {
+    return res.status(500).json(error);
+  }
 
-    };
+  return res.json(data);
+}

@@ -103,3 +103,14 @@ color:white;
 border-radius:8px;
 cursor:pointer;
 }
+
+.dots {
+  display: inline-block;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: .2; }
+  50% { opacity: 1; }
+  100% { opacity: .2; }
+}
