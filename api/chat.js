@@ -3,8 +3,8 @@ import axios from "axios";
 
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
 );
 export default async function handler(req, res) {
     try {
@@ -35,6 +35,10 @@ export default async function handler(req, res) {
         });
 
         // return res.status(200).json(response.data);
+
+        return res.status(200).json({
+            reply: aiReply
+        });
     } catch (error) {
         return res.status(500).json({
             error: error.response?.data || error.message
