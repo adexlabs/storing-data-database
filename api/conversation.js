@@ -1,42 +1,66 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "./supabase.js";
+import crypto from "crypto";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export default async function handler(
+    req,
+    res
+) {
 
-export default async function handler(req, res) {
-  try {
+    if (req.method !== "POST") {
 
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: "userId required"
-      });
+        return res
+            .status(405)
+            .json({
+                error:
+                    "Method not allowed"
+            });
     }
 
-    const { data, error } =
-      await supabase
-        .from("conversations")
-        .insert([
-          {
-            title: "New Chat",
-            user_id: userId
-          }
-        ])
-        .select()
-        .single();
+    try {
 
-    if (error) throw error;
+        const {
+            title,
+            userId
+        } = req.body;
 
-    return res.status(200).json(data);
+        const id =
+            crypto.randomUUID();
 
-  } catch (error) {
+        const { error } =
+            await supabase
+                .from(
+                    "conversations"
+                )
+                .insert([
+                    {
+                        id,
+                        title,
+                        user_id:
+                            userId
+                    }
+                ]);
 
-    return res.status(500).json({
-      error: error.message
-    });
+        if (error) {
 
-  }
+            return res
+                .status(500)
+                .json({
+                    error:
+                        error.message
+                });
+        }
+
+        return res.json({
+            id
+        });
+
+    } catch (err) {
+
+        return res
+            .status(500)
+            .json({
+                error:
+                    err.message
+            });
+    }
 }

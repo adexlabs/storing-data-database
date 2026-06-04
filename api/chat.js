@@ -109,7 +109,8 @@ export default async function handler(req, res) {
         {
           conversation_id: conversationId,
           role: "assistant",
-          content: reply
+          content: reply,
+          user_id: userId
         }
       ]);
 
