@@ -6,31 +6,32 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+
   try {
 
     const { userId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: "userId required"
-      });
-    }
-
-    const { data, error } =
+    const { data: existing } =
       await supabase
-        .from("conversations")
+        .from("users")
+        .select("*")
+        .eq("adex_user_id", userId)
+        .maybeSingle();
+
+    if (!existing) {
+
+      await supabase
+        .from("users")
         .insert([
           {
-            title: "New Chat",
-            user_id: userId
+            adex_user_id: userId
           }
-        ])
-        .select()
-        .single();
+        ]);
+    }
 
-    if (error) throw error;
-
-    return res.status(200).json(data);
+    return res.status(200).json({
+      success: true
+    });
 
   } catch (error) {
 

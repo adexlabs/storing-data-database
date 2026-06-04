@@ -1,319 +1,359 @@
-
-let userId = localStorage.getItem("userId");
-
-// if (!userId) {
-//     userId = crypto.randomUUID();
-//     localStorage.setItem("userId", userId);
-// }
-
-if (!userId) {
-  userId = "ADEX-USER-" + Date.now();
-  localStorage.setItem("userId", userId);
-}
-
 let currentConversation = null;
 
 const messages =
-    document.getElementById("messages");
+  document.getElementById("messages");
 
 const conversationList =
-    document.getElementById("conversationList");
+  document.getElementById("conversationList");
 
 const input =
-    document.getElementById("messageInput");
+  document.getElementById("messageInput");
 
+let userId = null;
+
+//
+// USER MANAGEMENT
+//
+async function getOrCreateUser() {
+
+  userId = localStorage.getItem("adex_user_id");
+
+  if (userId) {
+    console.log("Existing User:", userId);
+    return;
+  }
+
+  try {
+
+    const res =
+      await fetch("/api/user", {
+        method: "POST"
+      });
+
+    const data =
+      await res.json();
+
+    userId = data.userId;
+
+    localStorage.setItem(
+      "adex_user_id",
+      userId
+    );
+
+    console.log(
+      "New User Created:",
+      userId
+    );
+
+  } catch (err) {
+
+    console.error(
+      "User Creation Error",
+      err
+    );
+
+  }
+}
+
+//
+// ENTER KEY
+//
 input.addEventListener(
-    "keypress",
-    function (e) {
+  "keypress",
+  function (e) {
 
-        if (e.key === "Enter") {
+    if (e.key === "Enter") {
 
-            e.preventDefault();
+      e.preventDefault();
 
-            sendMessage();
-
-        }
+      sendMessage();
 
     }
+
+  }
 );
 
-// async function createConversation() {
-
-//     const res =
-//         await fetch("/api/conversation", {
-//             method: "POST"
-//         });
-
-//     const data =
-//         await res.json();
-
-//     currentConversation =
-//         data.id;
-
-//     loadConversations();
-
-//     messages.innerHTML = "";
-// }
-
+//
+// CREATE CONVERSATION
+//
 async function createConversation() {
 
-    const res = await fetch("/api/conversation", {
+  try {
+
+    const res =
+      await fetch("/api/conversation", {
+
         method: "POST",
+
         headers: {
-            "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         },
+
         body: JSON.stringify({
-            userId
+          userId
         })
-    });
 
-    const data = await res.json();
+      });
 
-    currentConversation = data.id;
+    const data =
+      await res.json();
+
+    currentConversation =
+      data.id;
+
+    loadConversations();
 
     messages.innerHTML = "";
 
-    loadConversations();
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
 }
 
 document
-    .getElementById("newChat")
-    .onclick = createConversation;
+  .getElementById("newChat")
+  .onclick = createConversation;
 
-// async function loadConversations() {
-
-//     const res =
-//         await fetch("/api/conversations");
-
-//     const chats =
-//         await res.json();
-
-//     conversationList.innerHTML = "";
-
-//     chats.forEach(chat => {
-
-//         const div =
-//             document.createElement("div");
-
-//         div.className = "chat-item";
-
-//         div.innerText =
-//             chat.title;
-
-//         div.onclick = () => {
-
-//             currentConversation =
-//                 chat.id;
-
-//             loadMessages(chat.id);
-//         };
-
-//         conversationList.appendChild(div);
-
-//     });
-// }
-
+//
+// LOAD CONVERSATIONS
+//
 async function loadConversations() {
 
+  try {
+
     const res =
-        await fetch(`/api/conversations?userId=${userId}`);
+      await fetch(
+        `/api/conversations?userId=${userId}`
+      );
 
     const chats =
-        await res.json();
+      await res.json();
 
     conversationList.innerHTML = "";
 
+    if (!Array.isArray(chats))
+      return;
+
     chats.forEach(chat => {
 
-        const div =
-            document.createElement("div");
+      const div =
+        document.createElement("div");
 
-        div.className = "chat-item";
+      div.className =
+        "chat-item";
 
-        div.innerText = chat.title;
+      div.innerText =
+        chat.title ||
+        "New Chat";
 
-        div.onclick = () => {
+      div.onclick = () => {
 
-            currentConversation = chat.id;
+        currentConversation =
+          chat.id;
 
-            loadMessages(chat.id);
-        };
+        localStorage.setItem(
+          "currentConversation",
+          chat.id
+        );
 
-        conversationList.appendChild(div);
+        loadMessages(chat.id);
+
+      };
+
+      conversationList.appendChild(div);
+
     });
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
 }
 
+//
+// LOAD MESSAGES
+//
 async function loadMessages(id) {
 
+  try {
+
     const res =
-        await fetch(`/api/messages?id=${id}`);
+      await fetch(
+        `/api/messages?id=${id}`
+      );
 
     const data =
-        await res.json();
+      await res.json();
 
     messages.innerHTML = "";
 
+    if (!Array.isArray(data))
+      return;
+
     data.forEach(msg => {
 
-        addMessage(
-            msg.content,
-            msg.role
-        );
+      addMessage(
+        msg.content,
+        msg.role
+      );
 
     });
 
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
 }
 
-function addMessage(text, role) {
+//
+// ADD MESSAGE
+//
+function addMessage(
+  text,
+  role
+) {
 
-    const div =
-        document.createElement("div");
+  const div =
+    document.createElement("div");
 
-    div.className =
-        `message ${role}`;
+  div.className =
+    `message ${role}`;
 
-    div.innerText = text;
+  div.innerText =
+    text;
 
-    messages.appendChild(div);
+  messages.appendChild(div);
 
-    messages.scrollTop =
-        messages.scrollHeight;
+  messages.scrollTop =
+    messages.scrollHeight;
+
 }
 
+//
+// SEND MESSAGE
+//
 document
-    .getElementById("sendBtn")
-    .onclick = sendMessage;
+  .getElementById("sendBtn")
+  .onclick = sendMessage;
 
 async function sendMessage() {
 
-    const text =
-        input.value.trim();
+  const text =
+    input.value.trim();
 
-    if (!text) return;
+  if (!text) return;
 
-    addMessage(text, "user");
+  if (!currentConversation) {
 
-    input.value = "";
+    await createConversation();
 
-    const loader =
-        document.createElement("div");
+  }
 
-    loader.className =
-        "message assistant loader";
+  addMessage(
+    text,
+    "user"
+  );
 
-    loader.innerHTML =
-        "<span></span><span></span><span></span>";
+  input.value = "";
 
-    messages.appendChild(loader);
+  const loader =
+    document.createElement("div");
 
-    try {
+  loader.className =
+    "message assistant loader";
 
-        const res =
-            await fetch("/api/chat", {
+  loader.innerHTML =
+    "<span></span><span></span><span></span>";
 
-                method: "POST",
+  messages.appendChild(loader);
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+  try {
 
-                body: JSON.stringify({
-                    conversationId:
-                        currentConversation,
+    const res =
+      await fetch(
+        "/api/chat",
+        {
 
-                    message: text
-                })
-            });
+          method: "POST",
 
-        const data =
-            await res.json();
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-        loader.remove();
+          body: JSON.stringify({
 
-        addMessage(
-            data.reply || data.error,
-            "assistant"
-        );
+            conversationId:
+              currentConversation,
 
-    } catch (err) {
+            userId,
 
-        loader.remove();
+            message: text
 
-        addMessage(
-            "Server Error",
-            "assistant"
-        );
-    }
+          })
+
+        }
+      );
+
+    const data =
+      await res.json();
+
+    loader.remove();
+
+    addMessage(
+      data.reply ||
+      data.error,
+      "assistant"
+    );
+
+    loadConversations();
+
+  } catch (err) {
+
+    loader.remove();
+
+    addMessage(
+      "Server Error",
+      "assistant"
+    );
+
+  }
+
 }
 
-// async function sendMessage() {
+//
+// APP START
+//
+async function init() {
 
-//     const input =
-//         document.getElementById("messageInput");
+  await getOrCreateUser();
 
-//     const text =
-//         input.value.trim();
+  await loadConversations();
 
-//     if (!text) return;
+  const savedConversation =
+    localStorage.getItem(
+      "currentConversation"
+    );
 
-//     addMessage(text, "user");
+  if (savedConversation) {
 
-//     input.value = "";
+    currentConversation =
+      savedConversation;
 
-//     const res =
-//         await fetch("/api/chat", {
+    loadMessages(
+      savedConversation
+    );
 
-//             method: "POST",
+  }
 
-//             headers: {
-//                 "Content-Type":
-//                     "application/json"
-//             },
+}
 
-//             body: JSON.stringify({
-
-//                 conversationId:
-//                     currentConversation,
-
-//                 message: text
-
-//             })
-//         });
-
-//     const loadingDiv =
-//         document.createElement("div");
-
-//     loadingDiv.className =
-//         "message assistant";
-
-//     loadingDiv.innerHTML =
-//         "AI is typing<span class='dots'>...</span>";
-
-//     messages.appendChild(loadingDiv);
-
-//     // const data = await res.json();
-
-//     let data;
-
-//     try {
-//         data = await res.json();
-//     } catch (e) {
-//         const text = await res.text();
-//         console.error("Server response:", text);
-//         addMessage("Server Error", "assistant");
-//         return;
-//     }
-
-//     loadingDiv.remove();
-
-//     addMessage(
-//         data.reply,
-//         "assistant"
-//     );
-
-//     loadConversations();
-// }
-
-loadConversations();
-createConversation();
+init();

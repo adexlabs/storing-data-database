@@ -14,6 +14,7 @@ export default async function handler(req, res) {
       .from("messages")
       .select("*")
       .eq("conversation_id", id)
+      .eq("user_id", userId)
       .order("created_at", {
         ascending: true
       });

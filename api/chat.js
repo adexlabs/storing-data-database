@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const { conversationId, message } = req.body;
+    const { conversationId, message, userId } = req.body;
 
     if (!conversationId) {
       return res.status(400).json({
@@ -75,7 +75,8 @@ export default async function handler(req, res) {
         {
           conversation_id: conversationId,
           role: "user",
-          content: message
+          content: message,
+          user_id: userId
         }
       ]);
 
