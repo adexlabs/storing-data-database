@@ -17,43 +17,34 @@ const input =
 //
 async function getOrCreateUser() {
 
-    userId = localStorage.getItem("adex_user_id");
+    userId =
+        localStorage.getItem("adex_user_id");
 
-    if (userId) {
-        console.log("Existing User:", userId);
-        return;
-    }
+    if (userId) return;
 
-    try {
+    userId =
+        "ADEX-" + Date.now();
 
-        const res =
-            await fetch("/api/user", {
-                method: "POST"
-            });
+    localStorage.setItem(
+        "adex_user_id",
+        userId
+    );
 
-        const data =
-            await res.json();
+    await fetch(
+        "/api/register-user",
+        {
+            method: "POST",
 
-        userId = data.userId;
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
 
-        localStorage.setItem(
-            "adex_user_id",
-            userId
-        );
-
-        console.log(
-            "New User Created:",
-            userId
-        );
-
-    } catch (err) {
-
-        console.error(
-            "User Creation Error",
-            err
-        );
-
-    }
+            body: JSON.stringify({
+                userId
+            })
+        }
+    );
 }
 
 //
@@ -132,7 +123,16 @@ async function createConversation(title = "New Chat") {
 }
 document
     .getElementById("newChat")
-    .onclick = createConversation;
+    .onclick = async () => {
+
+        messages.innerHTML = "";
+
+        currentConversation = null;
+
+        localStorage.removeItem(
+            "currentConversation"
+        );
+    };
 
 //
 // LOAD CONVERSATIONS
@@ -201,7 +201,7 @@ async function loadMessages(id) {
 
         const res =
             await fetch(
-                `/api/messages?id=${id}`
+                `/api/messages?id=${id}&userId=${userId}`
             );
 
         const data =

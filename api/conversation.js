@@ -1,66 +1,46 @@
-import { supabase } from "./supabase.js";
+import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-export default async function handler(
-    req,
-    res
-) {
+export default async function handler(req, res) {
 
-    if (req.method !== "POST") {
+  try {
 
-        return res
-            .status(405)
-            .json({
-                error:
-                    "Method not allowed"
-            });
-    }
+    const supabase =
+      createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
 
-    try {
+    const {
+      title,
+      userId
+    } = req.body;
 
-        const {
+    const id =
+      crypto.randomUUID();
+
+    const { error } =
+      await supabase
+        .from("conversations")
+        .insert([
+          {
+            id,
             title,
-            userId
-        } = req.body;
+            user_id: userId
+          }
+        ]);
 
-        const id =
-            crypto.randomUUID();
+    if (error) throw error;
 
-        const { error } =
-            await supabase
-                .from(
-                    "conversations"
-                )
-                .insert([
-                    {
-                        id,
-                        title,
-                        user_id:
-                            userId
-                    }
-                ]);
+    return res.status(200).json({
+      id
+    });
 
-        if (error) {
+  } catch (error) {
 
-            return res
-                .status(500)
-                .json({
-                    error:
-                        error.message
-                });
-        }
+    return res.status(500).json({
+      error: error.message
+    });
 
-        return res.json({
-            id
-        });
-
-    } catch (err) {
-
-        return res
-            .status(500)
-            .json({
-                error:
-                    err.message
-            });
-    }
+  }
 }

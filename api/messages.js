@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const { id } = req.query;
+    const { id, userId } = req.query;
 
     const { data, error } = await supabase
       .from("messages")
