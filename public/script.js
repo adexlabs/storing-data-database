@@ -1,9 +1,14 @@
 
 let userId = localStorage.getItem("userId");
 
+// if (!userId) {
+//     userId = crypto.randomUUID();
+//     localStorage.setItem("userId", userId);
+// }
+
 if (!userId) {
-    userId = crypto.randomUUID();
-    localStorage.setItem("userId", userId);
+  userId = "ADEX-USER-" + Date.now();
+  localStorage.setItem("userId", userId);
 }
 
 let currentConversation = null;
