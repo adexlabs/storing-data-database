@@ -8,86 +8,80 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   try {
+    // Allow only POST
     if (req.method !== "POST") {
       return res.status(405).json({
         error: "Method not allowed"
       });
     }
 
-    const { conversationId, message } = req.body;
-
-    if (!message || !conversationId) {
-      return res.status(400).json({
-        error: "Conversation ID and message are required"
+    // Check environment variables
+    if (
+      !process.env.SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      !process.env.OPENROUTER_API_KEY
+    ) {
+      return res.status(500).json({
+        error: "Missing environment variables"
       });
     }
 
-    // Update title if first message
+    const { conversationId, message } = req.body;
+
+    console.log("Conversation ID:", conversationId);
+    console.log("Message:", message);
+
+    if (!conversationId) {
+      return res.status(400).json({
+        error: "conversationId is required"
+      });
+    }
+
+    if (!message) {
+      return res.status(400).json({
+        error: "message is required"
+      });
+    }
+
+    // Get conversation
     const { data: conversation, error: conversationError } =
       await supabase
         .from("conversations")
-        .select("title")
+        .select("*")
         .eq("id", conversationId)
         .single();
 
     if (conversationError) {
-      console.log("Conversation fetch error:", conversationError);
+      console.error("Conversation fetch error:", conversationError);
+
+      return res.status(500).json({
+        error: "Conversation not found"
+      });
     }
 
+    // Update title if still "New Chat"
     if (
-      conversation &&
-      (
-        conversation.title === "New Chat" ||
-        conversation.title === null ||
-        conversation.title === ""
-      )
+      conversation.title === "New Chat" ||
+      !conversation.title
     ) {
-      const { error: updateError } = await supabase
-        .from("conversations")
-        .update({
-          title:
-            message.length > 30
-              ? message.substring(0, 30) + "..."
-              : message
-        })
-        .eq("id", conversationId);
+      const { error: updateError } =
+        await supabase
+          .from("conversations")
+          .update({
+            title:
+              message.length > 30
+                ? message.substring(0, 30) + "..."
+                : message
+          })
+          .eq("id", conversationId);
 
       if (updateError) {
-        console.log("Title update error:", updateError);
+        console.error("Title update error:", updateError);
       }
     }
 
-    // Call OpenRouter
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "openai/gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: message
-          }
-        ]
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "OK" : "MISSING");
-    console.log("OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY ? "OK" : "MISSING");
-    console.log("Conversation ID:", conversationId);
-    console.log("Message:", message);
-
-    const reply =
-      response.data?.choices?.[0]?.message?.content ||
-      "No response received";
-
-    // Save messages
-    const { error: messageError } =
+    // Save user message
+    const { error: userInsertError } =
       await supabase
         .from("messages")
         .insert([
@@ -95,7 +89,44 @@ export default async function handler(req, res) {
             conversation_id: conversationId,
             role: "user",
             content: message
+          }
+        ]);
+
+    if (userInsertError) {
+      console.error("User message save error:", userInsertError);
+    }
+
+    // OpenRouter API call
+    const openRouterResponse =
+      await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model: "openai/gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: message
+            }
+          ]
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json"
           },
+          timeout: 30000
+        }
+      );
+
+    const reply =
+      openRouterResponse.data?.choices?.[0]?.message?.content ||
+      "No response received";
+
+    // Save AI message
+    const { error: aiInsertError } =
+      await supabase
+        .from("messages")
+        .insert([
           {
             conversation_id: conversationId,
             role: "assistant",
@@ -103,8 +134,8 @@ export default async function handler(req, res) {
           }
         ]);
 
-    if (messageError) {
-      console.log("Message save error:", messageError);
+    if (aiInsertError) {
+      console.error("AI message save error:", aiInsertError);
     }
 
     return res.status(200).json({
@@ -112,10 +143,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("FULL ERROR:", error);
 
     return res.status(500).json({
-      error: error.response?.data || error.message
+      error: error.message,
+      details: error.response?.data || null
     });
   }
 }
