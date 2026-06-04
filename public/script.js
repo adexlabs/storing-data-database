@@ -1,23 +1,5 @@
 
-let userId = localStorage.getItem("adex_user_id");
-
-if (!userId) {
-    let userId = "ADEX-" + Date.now();
-
-    localStorage.setItem("adex_user_id", userId);
-
-    fetch("/api/user", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            adex_user_id: userId
-        })
-    });
-}
-
-console.log("User ID:", userId);
+let userId = localStorage.getItem("adex_user_id") || null;
 
 let currentConversation = null;
 
@@ -30,14 +12,12 @@ const conversationList =
 const input =
     document.getElementById("messageInput");
 
-let userId = null;
-
 //
 // USER MANAGEMENT
 //
 async function getOrCreateUser() {
 
-    let userId = localStorage.getItem("adex_user_id");
+    userId = localStorage.getItem("adex_user_id");
 
     if (userId) {
         console.log("Existing User:", userId);
@@ -54,7 +34,7 @@ async function getOrCreateUser() {
         const data =
             await res.json();
 
-        let userId = data.userId;
+        userId = data.userId;
 
         localStorage.setItem(
             "adex_user_id",
