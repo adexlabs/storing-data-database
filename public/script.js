@@ -2,7 +2,7 @@
 let userId = localStorage.getItem("adex_user_id");
 
 if (!userId) {
-    userId = "ADEX-" + Date.now();
+    let userId = "ADEX-" + Date.now();
 
     localStorage.setItem("adex_user_id", userId);
 
@@ -37,7 +37,7 @@ let userId = null;
 //
 async function getOrCreateUser() {
 
-    userId = localStorage.getItem("adex_user_id");
+    let userId = localStorage.getItem("adex_user_id");
 
     if (userId) {
         console.log("Existing User:", userId);
@@ -54,7 +54,7 @@ async function getOrCreateUser() {
         const data =
             await res.json();
 
-        userId = data.userId;
+        let userId = data.userId;
 
         localStorage.setItem(
             "adex_user_id",
