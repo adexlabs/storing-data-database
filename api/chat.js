@@ -76,7 +76,8 @@ export default async function handler(req, res) {
           conversation_id: conversationId,
           role: "user",
           content: message,
-          user_id: userId
+          user_id: userId,
+          created_at: new Date().toISOString()
         }
       ]);
 
@@ -110,7 +111,8 @@ export default async function handler(req, res) {
           conversation_id: conversationId,
           role: "assistant",
           content: reply,
-          user_id: userId
+          user_id: userId,
+          created_at: new Date().toISOString()
         }
       ]);
 
