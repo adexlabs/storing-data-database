@@ -1,3 +1,11 @@
+
+let userId = localStorage.getItem("userId");
+
+if (!userId) {
+    userId = crypto.randomUUID();
+    localStorage.setItem("userId", userId);
+}
+
 let currentConversation = null;
 
 const messages =
@@ -24,32 +32,86 @@ input.addEventListener(
     }
 );
 
+// async function createConversation() {
+
+//     const res =
+//         await fetch("/api/conversation", {
+//             method: "POST"
+//         });
+
+//     const data =
+//         await res.json();
+
+//     currentConversation =
+//         data.id;
+
+//     loadConversations();
+
+//     messages.innerHTML = "";
+// }
+
 async function createConversation() {
 
-    const res =
-        await fetch("/api/conversation", {
-            method: "POST"
-        });
+    const res = await fetch("/api/conversation", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            userId
+        })
+    });
 
-    const data =
-        await res.json();
+    const data = await res.json();
 
-    currentConversation =
-        data.id;
-
-    loadConversations();
+    currentConversation = data.id;
 
     messages.innerHTML = "";
+
+    loadConversations();
 }
 
 document
     .getElementById("newChat")
     .onclick = createConversation;
 
+// async function loadConversations() {
+
+//     const res =
+//         await fetch("/api/conversations");
+
+//     const chats =
+//         await res.json();
+
+//     conversationList.innerHTML = "";
+
+//     chats.forEach(chat => {
+
+//         const div =
+//             document.createElement("div");
+
+//         div.className = "chat-item";
+
+//         div.innerText =
+//             chat.title;
+
+//         div.onclick = () => {
+
+//             currentConversation =
+//                 chat.id;
+
+//             loadMessages(chat.id);
+//         };
+
+//         conversationList.appendChild(div);
+
+//     });
+// }
+
 async function loadConversations() {
 
     const res =
-        await fetch("/api/conversations");
+        await fetch(`/api/conversations?userId=${userId}`);
 
     const chats =
         await res.json();
@@ -63,19 +125,16 @@ async function loadConversations() {
 
         div.className = "chat-item";
 
-        div.innerText =
-            chat.title;
+        div.innerText = chat.title;
 
         div.onclick = () => {
 
-            currentConversation =
-                chat.id;
+            currentConversation = chat.id;
 
             loadMessages(chat.id);
         };
 
         conversationList.appendChild(div);
-
     });
 }
 

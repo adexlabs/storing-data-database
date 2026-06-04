@@ -1,29 +1,33 @@
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
-  try {
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    try {
 
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .order("created_at", {
-        ascending: false
-      });
+        const supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
 
-    if (error) throw error;
+        const { userId } = req.query;
 
-    return res.status(200).json(data);
+        const { data, error } =
+            await supabase
+                .from("conversations")
+                .select("*")
+                .eq("user_id", userId)
+                .order("created_at", {
+                    ascending: false
+                });
 
-  } catch (error) {
+        if (error) throw error;
 
-    return res.status(500).json({
-      error: error.message
-    });
+        return res.status(200).json(data);
 
-  }
+    } catch (error) {
+
+        return res.status(500).json({
+            error: error.message
+        });
+    }
 }
